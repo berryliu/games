@@ -10,16 +10,18 @@ var states = {
     this.preload = function () {
       game.load.crossOrigin = 'anonymous'
 
-      game.load.image('bg', './assets/images/bg.png');
-      game.load.image('dude', './assets/images/dude.png');
-      game.load.image('green', './assets/images/green.png');
-      game.load.image('red', './assets/images/red.png');
-      game.load.image('yellow', './assets/images/yellow.png');
-      game.load.image('bomb', './assets/images/bomb.png');
-      game.load.image('five', './assets/images/five.png');
-      game.load.image('three', './assets/images/three.png');
-      game.load.image('one', './assets/images/one.png');
-      game.load.audio('bgMusic', './assets/audio/bgMusic.mp3');
+      game.load.image('bg', './assets/images/bg.png')
+      game.load.image('dude', './assets/images/dude.png')
+      game.load.image('green', './assets/images/green.png')
+      game.load.image('red', './assets/images/red.png')
+      game.load.image('yellow', './assets/images/yellow.png')
+      game.load.image('bomb', './assets/images/bomb.png')
+      game.load.image('five', './assets/images/five.png')
+      game.load.image('three', './assets/images/three.png')
+      game.load.image('one', './assets/images/one.png')
+      game.load.audio('bgMusic', './assets/audio/bgMusic.mp3')
+      game.load.audio('boomMusic', './assets/audio/boom.mp3')
+      game.load.audio('scoreMusic', './assets/audio/addscore.mp3')
 
       var progressText = game.add.text(game.world.centerX, game.world.centerY, '0%', {
         fontSize: '60px',
@@ -37,13 +39,13 @@ var states = {
       var deadline = false
       setTimeout(function () {
         deadline = true
-      }, 2000)
+      }, 1000)
 
       function onload () {
         if (deadline) {
           game.state.start('created')
         } else {
-          setTimeout(onload, 1000)
+          setTimeout(onload, 500)
         }
       }
 
@@ -87,11 +89,77 @@ var states = {
   },
   play: function () {
     this.create = function () {
-      game.stage.backgroundColor = '#444'
+      var score = 0
 
-      setTimeout(function () {
-        game.state.start('over')
-      }, 1000)
+      // 背景音乐
+      var bgMusic = game.add.audio('bgMusic')
+      bgMusic.loopFull()
+
+      // 特效音乐
+      var scoreMusic = game.add.audio('scoreMusic')
+      var bombMusic = game.add.audio('bombMusic')
+
+      // 背景
+      var bg = game.add.image(0, 0, 'bg')
+      bg.width = game.world.width
+      bg.height = game.world.height
+
+      // 恐龙
+      var man = game.add.sprite(game.world.centerX, game.world.height * 0.75, 'dude')
+      var manImage = game.cache.getImage('dude')
+      man.width = game.world.width * 0.2
+      man.height = man.width / manImage.width * manImage.height
+      man.anchor.setTo(0.5, 0.5)
+
+      // 分数
+      var title = game.add.text(game.world.centerX, game.world.height * 0.25, '0', {
+        fontSize: '40px',
+        fontWeight: 'bold',
+        fill: '#f2bb15'
+      })
+      title.anchor.setTo(0.5, 0.5)
+
+      // 判断是否按下
+      var touching = false
+      game.input.onDown.add(function (pointer) {
+        if (Math.abs(pointer.x - man.x) < (man.width / 2)) {
+          touching = true
+        }
+      })
+      game.input.onUp.add(function () {
+        touching = false
+      })
+
+      // 移动恐龙
+      game.input.addMoveCallback(function (pointer, x, y, isTap) {  // 是否是点击
+        if (!isTap && touching) {
+          man.x = x
+        }
+      })
+
+      // 添加苹果组
+      var apples = game.add.group()
+      var appleTypes = [ 'green', 'red', 'yellow' ]
+      var appleTimer = game.time.create(true) // 自动销毁
+
+      appleTimer.loop(1000, function () {
+        var x = Math.random() * game.world.width
+        var type = appleTypes[ Math.floor(Math.random() * appleTypes.length) ]
+        var apple = apples.create(x, 0, type)
+
+        // 设置苹果大小
+        var appleImage = game.cache.getImage(type)
+        apple.width = game.world.width / 8
+        apple.height = apple.width / appleImage.width * appleImage.height
+
+        game.physics.enable(apple)
+      })
+
+      appleTimer.start()
+
+      game.physics.startSystem(Phaser.Physics.Arcade)
+      game.physics.arcade.gravity.y = 300
+
     }
   },
   over: function () {

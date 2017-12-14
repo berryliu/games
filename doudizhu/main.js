@@ -288,7 +288,7 @@ Player.prototype = {
    * @param y
    */
   initUI: function (x, y) {
-    this.uiHead = game.add.sprite(x, y, 'btn', 'icon_default.png')
+    this.uiHead = game.add.sprite(x, y, 'btn', 'icon_farmer.png') // 先初始化农民
     this.uiHead.anchor.set(0.5, 1)
   },
 
@@ -508,7 +508,30 @@ function NetPlayer (seat) {
   Player.call(this, seat)
 }
 
-NetPlayer.prototype = Object.create(Player.prototype)
+var netPlayerPrototype = Object.assign(Player.prototype, {
+  /**
+   * @desc 分牌动画
+   * @param poker
+   * @param i
+   */
+  dealPokerAnim: function (poker, i) {
+    var width = game.world.width
+    if (poker.id > 53) {
+      game.add.tween(poker).to({
+        x: this.seat === 1 ? width - PW / 2 : PW / 2,
+        y: this.seat === 1 ? this.uiHead.y + PH / 2 + 10 : this.uiHead.y + PH / 2 + 10
+      }, 500, null, true, 25 + 50 * i)
+    } else {
+      game.add.tween(poker).to({
+        x: this.seat == 1 ? (width - PW / 2) - (i * PW * 0.44) : PW / 2 + i * PW * 0.44,
+        y: this.seat == 1 ? this.uiHead.y + PH / 2 + 10 : this.uiHead.y + PH * 1.5 + 20
+      }, 500, null, true, 25 + 50 * i)
+    }
+  },
+
+})
+
+NetPlayer.prototype = Object.create(netPlayerPrototype)
 NetPlayer.prototype.constructor = NetPlayer
 
 /**
@@ -524,32 +547,37 @@ function Poker (id, frame) {
   return this
 }
 
-Poker.prototype = Object.create(Phaser.Sprite.prototype, {
-  comparePoker: function (a, b) {
-    if (a instanceof Array && b instanceof Array) {
-      a = a[ 0 ]
-      b = b[ 0 ]
-    }
+Poker.prototype = Object.create(Phaser.Sprite.prototype)
+Poker.prototype.constructor = Poker
 
-    if (a >= 52 || b >= 52) { // 大小王随意比较
-      return -(a - b)
-    }
+/**
+ * @desc 比较牌面大小
+ * @param a
+ * @param b
+ * @returns {number}
+ */
+Poker.comparePoker = function (a, b) {
+  if (a instanceof Array && b instanceof Array) {
+    a = a[ 0 ]
+    b = b[ 0 ]
+  }
 
-    a = a % 13
-    b = b % 13
-
-    if (a == 0 || a == 1) { // A 和 2 的大小
-      a += 13
-    }
-    if (b == 0 || b == 1) {
-      b += 13
-    }
-
+  if (a >= 52 || b >= 52) { // 大小王随意比较
     return -(a - b)
   }
-})
 
-Poker.prototype.constructor = Poker
+  a = a % 13
+  b = b % 13
+
+  if (a == 0 || a == 1) { // A 和 2 的大小
+    a += 13
+  }
+  if (b == 0 || b == 1) {
+    b += 13
+  }
+
+  return -(a - b)
+}
 
 // 加载场景
 game.state.add('Boot', Boot)
